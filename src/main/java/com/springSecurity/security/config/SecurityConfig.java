@@ -1,5 +1,6 @@
 package com.springSecurity.security.config;
 
+import jakarta.servlet.http.HttpSession;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -16,21 +17,18 @@ public class SecurityConfig {
         return http.authorizeHttpRequests(auth -> auth.
                         anyRequest().authenticated()
                 )
-                .formLogin(formLogin -> formLogin
-                        .loginPage("/loginPage") // 이 페이지는 로그인을 위한 페이지이므로 누구나 접근이 가능해야 한다.
-                        .defaultSuccessUrl("/")
-                        .failureUrl("/login")
-                        .usernameParameter("userId") // 주의
-                        .passwordParameter("password") // 주의
-                        .loginProcessingUrl("/login_proc")
-                        .successHandler((request, response, authentication) -> {
-                            System.out.println("authentication" + authentication.getName());
-                            response.sendRedirect("/");
+                .formLogin(Customizer.withDefaults())
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login")
+                        .addLogoutHandler((request, response, authentication) -> {
+                            HttpSession session = request.getSession();
+                            session.invalidate(); // 세션 무효화
                         })
-                        .failureHandler((request, response, exception) -> {
-                            System.out.println("exception" + exception.getMessage());
+                        .logoutSuccessHandler((request, response, authentication) -> {
                             response.sendRedirect("/login");
                         })
+                        .deleteCookies("remember-me")
                         .permitAll()
                 )
                 .build();
